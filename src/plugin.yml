@@ -1,0 +1,20 @@
+name: phpbbpm
+main: fr.amazou.phpbbpm.Phpbbpm
+version: 1.0
+
+commands:
+   pmread:
+      description: read the last PM. If a player is specified, read the last pm of this one. If an id is specified, read a specific PM.
+      usage:
+         /pmread [player/id]
+
+   pmsend:
+     description: send a PM to a player
+     usage:
+         /pmsend <player> <message>
+
+   pmlist:
+     description: list unreaded PM.
+     usage:
+         /pmlist [all]
+     
