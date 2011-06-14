@@ -29,7 +29,7 @@ public class Commands {
         if (msg == null || msg.size() == 0) {
             this.player.sendMessage(ChatColor.YELLOW + "No message");
         } else {
-            this.player.sendMessage(String.format("%sde: %s%s", ChatColor.GREEN, ChatColor.WHITE,
+            this.player.sendMessage(String.format("%sfrom: %s%s", ChatColor.GREEN, ChatColor.WHITE,
                 msg.get("username")));
             this.player.sendMessage(String.format("%sobj: %s%s", ChatColor.GREEN, ChatColor.WHITE,
                 msg.get("message_subject")));
@@ -42,8 +42,8 @@ public class Commands {
         return true;
     }
 
-    public boolean Send(String to, String subject, String text) {
-        if (sql.SendMsg(to, subject, text)) {
+    public boolean Send(String to, String subject, List<String> text) {
+        if (sql.SendMsg(to, subject.replace('_', ' '), text)) {
             this.player.sendMessage(ChatColor.YELLOW + "Message sent to " + to);
         } else {
             this.player.sendMessage(ChatColor.YELLOW + "Message not sent");

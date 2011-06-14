@@ -1,6 +1,5 @@
 /*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
+ * BroadCast unread messages for Phpbbpm
  */
 package fr.amazou.phpbbpm;
 
@@ -33,7 +32,7 @@ class BroadCastUnread extends Phpbbpm {
                         Player p = findPlayer(e.getKey().toLowerCase(), players);
                         pmNb = e.getValue();
                         if (p != null && pmNb != 0) {
-                            p.sendMessage(String.format("%s%s %spm non lu.", ChatColor.RED, pmNb, ChatColor.WHITE));
+                            p.sendMessage(String.format("%s%s %spm unread.", ChatColor.RED, pmNb, ChatColor.WHITE));
                         }
                     }
                     sql.Close();
@@ -48,6 +47,16 @@ class BroadCastUnread extends Phpbbpm {
                 }
                 return null;
             }
-        }, 60L, 2000L);
+        }, 60L, 1200 * Phpbbpm.getPluginConfig().getDelay());
+    }
+    
+    public void JoinMessage(Player p) {
+        SqlManager sql = new SqlManager();
+        sql.setPlayer(p);
+        int pmNb = sql.getNbUnreadMsg_solo();
+        if (pmNb > 0) {
+            p.sendMessage(String.format("%s%s %spm unread.", ChatColor.RED, pmNb, ChatColor.WHITE));
+        }
+        sql.Close();
     }
 }

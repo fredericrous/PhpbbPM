@@ -3,18 +3,23 @@ main: fr.amazou.phpbbpm.Phpbbpm
 version: 1.0
 
 commands:
+   pmhelp:
+      description: affiche l'aide de phpbbpm
+      usage:
+         /pmhelp
+
    pmread:
       description: read the last PM. If a player is specified, read the last pm of this one. If an id is specified, read a specific PM.
       usage:
-         /pmread [player/id]
+         /pmread [id]
 
    pmsend:
      description: send a PM to a player
      usage:
-         /pmsend <player> <message>
+         /pmsend <player> <subject> <message>
 
    pmlist:
      description: list unreaded PM.
      usage:
-         /pmlist [all]
+         /pmlist
      

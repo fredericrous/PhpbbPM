@@ -1,6 +1,5 @@
 /*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
+ * SqlManager for PhpbbPM
  */
 package fr.amazou.phpbbpm;
 
@@ -71,11 +70,28 @@ public class SqlManager extends Phpbbpm {
                 map.put(result.getString("username"), result.getInt("unread_msg"));
             }
         } catch (SQLException ex) {
-            //log.log(Level.WARNING, "[phpbbpm] Error getting unreaded messages of " + player.getName());
+            //log.log(Level.WARNING, "[phpbbpm] Error getting unreaded messages of players");
         }
         return map;
     }
     
+    public int getNbUnreadMsg_solo() {
+        String query = String.format("select count(msg_id) as unread_msg"
+                + " from %1$sprivmsgs_to msg"
+                + " left join %1$susers u on msg.user_id = u.user_id"
+                + " where pm_unread = 1 and lower(username) like lower(?)", db_prefix);
+        try {
+            PreparedStatement ps = conn.prepareStatement(query);
+            ps.setString(1, "%" + player.getName() + "%");
+            ResultSet result = ps.executeQuery();
+            if (result.next()) {
+                return result.getInt("unread_msg");
+            }
+        } catch (SQLException ex) {
+            //log.log(Level.WARNING, "[phpbbpm] Error getting unreaded message of " + player.getName());
+        }
+        return 0;
+    }
     
     public List<Map<String, String>> getMsgs() {
         List<Map<String, String>> list = new ArrayList<Map<String, String>>();
@@ -110,7 +126,8 @@ public class SqlManager extends Phpbbpm {
     public Map<String, String> ReadMsg(int msg_id) {
         Map<String, String> map = null;
         String query = String.format(
-                "select msg.msg_id as msg_id, aut.username as username, message_subject, message_text"
+                "select msg.msg_id as msg_id, u.user_id as user_id,"
+                + " aut.username as username, message_subject, message_text"
                 + " from %1$sprivmsgs_to msgto"
                 + " left join %1$susers aut on msgto.author_id = aut.user_id"
                 + " left join %1$sprivmsgs msg on msgto.msg_id = msg.msg_id"
@@ -134,20 +151,41 @@ public class SqlManager extends Phpbbpm {
                     map.put(key, result.getString(key));
                 }
                 if (map != null && map.size() > 0) {
+                    conn.setAutoCommit(false);
+                    
                     query = String.format("update %sprivmsgs_to set pm_unread = 0 where msg_id = %d",
                             db_prefix, result.getInt("msg_id"));
-                    ps = conn.prepareStatement(query);
-                    ps.executeUpdate();
+                    Statement st = conn.createStatement();
+                    st.executeUpdate(query);
+                    
+                    query = String.format("update %susers", db_prefix)
+                        + " set user_new_privmsg = case when user_new_privmsg > 0 then"
+                        + " user_new_privmsg - 1 else 0 end,"
+                        + " user_unread_privmsg = case when user_unread_privmsg > 0 then"
+                        + " user_unread_privmsg - 1 else 0 end where user_id = "
+                        + result.getInt("user_id");
+                    st = conn.createStatement();
+                    st.executeUpdate(query);
+                    
+                    conn.commit();
+                    conn.setAutoCommit(true);
                 }
             }
             return map;
         } catch (SQLException ex) {
+            try {
+                conn.rollback();
+                conn.setAutoCommit(true);
+                //this.log.info("[phpbbpm] Error updating new pm number");
+            } catch (SQLException ex1) {
+                //this.log.info("[phpbbpm] rollback error. ex: " + ex.getMessage());
+            }
             //log.log(Level.WARNING, "[phpbbpm] Error getting unreaded message of " + player.getName());
         }
         return null;
     }
     
-    public boolean SendMsg(String to, String msg_subject, String msg_text) {
+    public boolean SendMsg(String to, String msg_subject, List<String> msg_text) {
         String query_get_ids = String.format("select user_id from %susers", db_prefix)
                 + " where lower(username) like lower(?)";
         query_get_ids += " union " + query_get_ids;
@@ -187,7 +225,14 @@ public class SqlManager extends Phpbbpm {
                 PreparedStatement ps_insert_pm = conn.prepareStatement(query_insert_pm);
                 ps_insert_pm.setInt(1, author_id);
                 ps_insert_pm.setString(2, msg_subject);
-                ps_insert_pm.setString(3, msg_text);
+                String full_text = "";
+                for (int i = 0; i < msg_text.size(); i++) {
+                    full_text += msg_text.get(i);
+                    if (i != msg_text.size() - 1) {
+                       full_text += " "; 
+                    }
+                }
+                ps_insert_pm.setString(3, full_text);
                 ps_insert_pm.setString(4, "u_" + to_id);
                 ps_insert_pm.setString(5, "");
                 ps_insert_pm.executeUpdate();

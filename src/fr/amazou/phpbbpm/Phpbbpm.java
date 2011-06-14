@@ -3,12 +3,20 @@
  */
 package fr.amazou.phpbbpm;
 
+import java.lang.String;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.logging.Logger;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.Server;
 import org.bukkit.entity.Player;
+import org.bukkit.event.Event;
+import org.bukkit.event.Event.Priority;
+import org.bukkit.event.Event.Type;
+import org.bukkit.plugin.PluginManager;
 
 /**
  *
@@ -30,8 +38,11 @@ public class Phpbbpm extends JavaPlugin {
         
         server = this.getServer();
         
-    BroadCastUnread unread_msg = new BroadCastUnread();
-    unread_msg.Start();
+        PluginManager manager = server.getPluginManager();
+        manager.registerEvent(Event.Type.PLAYER_JOIN, new Listener(this), Priority.Normal, this);
+        
+        BroadCastUnread unread_msg = new BroadCastUnread();
+        unread_msg.Start();
     }
     
     @Override
@@ -47,7 +58,7 @@ public class Phpbbpm extends JavaPlugin {
         Commands c = new Commands((Player)sender);
         boolean ret = true;
         
-        if (myCmd.equals("pm")) {
+        if (myCmd.equals("pmhelp")) {
             c.Help();
         } else if (myCmd.equals("pmread")) {
             int n = 0;
@@ -66,7 +77,8 @@ public class Phpbbpm extends JavaPlugin {
             }
         } else if (myCmd.equals("pmsend")) {
             if (args.length >= 3) {
-                ret = c.Send(args[0], args[1], args[2]);
+                List msg_text = new ArrayList<String>(Arrays.asList(args));
+                ret = c.Send(args[0], args[1], msg_text.subList(2, msg_text.size()));
             }
         } else if (myCmd.equals("pmlist")) {
             ret = c.List();

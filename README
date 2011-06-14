@@ -1,1 +1,48 @@
-Put the files into your plugins folder and configure the properties file
+PhpbbPM README
+
+How it works:
+On player game join, if the player got a new pm, a reminder is displayed.
+Every X minutes (7 by default), if the player got a new pm, a reminder is displayed either.
+
+Usage:
+
+/pmhelp
+display in-game help for phpbbpm
+
+/pmlist
+list all new pm
+
+/pmread [id]
+read new pm.
+id (gave by pmlist) is optional, without it the last new pm you received will be displayed.
+
+/pmsend <player> <subject> <message>
+send a pm.
+the subject must be in one word. if you use an underscore ('_'), it will be replaced by a space (' ').
+
+
+Installation:
+
+Make sure you have a phpbb 3 forum installed.
+Make sure your players have a similar name on your forum and on Minecraft.
+Put phpbbpm.jar and the phpbbpm folder into your bukkit plugins folder.
+edit config.properties and specify the database properties of your phpbb forum.
+
+The 'unread_warning_delay' property correspond to the schedule new pm reminder.
+
+Note: if the phpbbpm folder or the config file does not exists, a default one will be generate.
+
+
+Known bug:
+If you have players with similar pseudo, the plugin can match the wrong user because the search is made by a lower(username) = lower('%pseudo%') (where % = all char before/after).
+
+
+How to develop on this plugin:
+I made this plugin using Netbeans 7.0 (this IDE has the particularity to integrate apache maven project by default), I only linked as a library the bukkit jar file.
+The main class is Phpbbpm.class
+
+
+Special thanks to :
+- Mojang for developing this great game Minecraft is and for giving us the source code of the server.
+- Bukkit.org for giving me the opportunity to develop a plugin for Minecraft on their awesome free open source mod.
+- Amazou.fr players who tested the plugin.

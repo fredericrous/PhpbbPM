@@ -25,9 +25,12 @@ public class Config {
    private String db_user;
    private String db_pass;
    private String db_prefix;
+   private Integer unread_warning_delay;
    
     public Config() {
         log = Logger.getLogger("Minecraft");
+        unread_warning_delay = 7;
+        
         checkPluginDirExists();
  
         prop = new Properties();       
@@ -47,12 +50,13 @@ public class Config {
         try {
             configFile.createNewFile();
             FileOutputStream out = new FileOutputStream(configFile);
-            prop.put("db_url", "jdbc:mysql://localhost:3306/");
-            prop.put("db_name", "mysql_phpbb_database");
-            prop.put("db_user", "mysql_login");
-            prop.put("db_pass", "mysql_password");
             prop.put("db_prefix", "phpbb_table_prefix");
-            prop.store(out, "phpbb config for phpbbpm");
+            prop.put("db_pass", "mysql_password");
+            prop.put("db_user", "mysql_login");
+            prop.put("db_name", "mysql_phpbb_database");
+            prop.put("db_url", "jdbc:mysql://localhost:3306/");
+            prop.put("unread_warning_delay", unread_warning_delay.toString());
+            prop.store(out, "PhpbbPM configuration file");
             out.flush();
             out.close();          
             } catch (IOException ex) {
@@ -69,7 +73,11 @@ public class Config {
             db_user = prop.getProperty("db_user");
             db_pass = prop.getProperty("db_pass");
             db_prefix = prop.getProperty("db_prefix");
-            in.close();    
+            unread_warning_delay = Integer.parseInt(prop.getProperty("unread_warning_delay"));
+            in.close();
+        } catch (NumberFormatException ex) {
+            log.info(String.format("[phpbbpm] Could not load unread_warning_delay propertie,"
+                    + " set to default (%d min)", unread_warning_delay));
         } catch (IOException ex) {
             log.info("[phpbbpm] Could not load " + configFile.getPath());
         }
@@ -93,6 +101,10 @@ public class Config {
     
     public String getDB_prefix() {
         return db_prefix;
+    }
+
+    public int getDelay() {
+        return unread_warning_delay;
     }
 
 }
