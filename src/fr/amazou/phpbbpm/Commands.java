@@ -9,8 +9,8 @@ import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 
 /**
- *
- * @author fredericrousseau
+ * commands definition
+ * @author Zougi
  */
 public class Commands {
 
@@ -23,6 +23,11 @@ public class Commands {
         sql.setPlayer(player);
     }
 
+    /**
+     * display the last pm
+     * @param msg_id if not 0, display the pm with the id of #msg_id
+     * @return 
+     */
     public boolean Read(int msg_id) {
         Map<String, String> msg = sql.ReadMsg(msg_id);
         try {
@@ -42,6 +47,13 @@ public class Commands {
         return true;
     }
 
+    /**
+     * send a private message
+     * @param to the player you want to pm
+     * @param subject the subject of your pm
+     * @param text your message
+     * @return 
+     */
     public boolean Send(String to, String subject, List<String> text) {
         if (sql.SendMsg(to, subject.replace('_', ' '), text)) {
             this.player.sendMessage(ChatColor.YELLOW + "Message sent to " + to);
@@ -51,6 +63,10 @@ public class Commands {
         return true;
     }
 
+    /**
+     * display the list of all new pm
+     * @return 
+     */
     public boolean List() {
         List<Map<String, String>> msgs = sql.getMsgs();
         
@@ -66,6 +82,9 @@ public class Commands {
         return true;
     }
     
+    /**
+     * display the help
+     */
     public void Help() {
         this.player.sendMessage(ChatColor.BLUE + "List of PhpbbPM cmds:");
         this.player.sendMessage(String.format("%s/pmlist                           "

@@ -3,34 +3,50 @@
  */
 package fr.amazou.phpbbpm;
 
+import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.util.Properties;
 import java.util.logging.Logger;
 
 /**
- *
- * @author fredericrousseau
+ * make/load config file
+ * @author Zougi
  */
 public class Config {
    
-   private static String pluginDirPath = "plugins/phpbbpm";
-   private static File configFile = new File(pluginDirPath +"/config.properties");
-   private Logger log;
-   private Properties prop;
-   private String db_url;
-   private String db_name;
-   private String db_user;
-   private String db_pass;
-   private String db_prefix;
-   private Integer unread_warning_delay;
-   
+    private static String pluginDirPath = "plugins/phpbbpm";
+    private static File configFile = new File(pluginDirPath +"/config.properties");
+    private Logger log;
+    private Properties prop;
+
+    private String db_url;
+    private String db_name;
+    private String db_user;
+    private String db_pass;
+    private String db_prefix;
+
+    private String unread_warning;
+    private Integer unread_warning_delay;
+
+    private Integer sign_update_delay;
+    private String sign_detection_string;
+    private String sign_msg;
+    
     public Config() {
         log = Logger.getLogger("Minecraft");
+        
+        unread_warning = "%s%s %spm unread.";
         unread_warning_delay = 7;
         
+        sign_update_delay = 5;
+        sign_detection_string = "PhpbbPM";
+        sign_msg = "%s%d unread msg";
+                
         checkPluginDirExists();
  
         prop = new Properties();       
@@ -39,6 +55,9 @@ public class Config {
         }
     }
 
+    /**
+     * check is the plugin directory exists and make it if it does not
+     */
     private void checkPluginDirExists() {
         File pluginDir = new File(pluginDirPath);
         if (!pluginDir.isDirectory()) {
@@ -46,65 +65,142 @@ public class Config {
         }
     }
 
+    /**
+     * make a default config file
+     */
     private void makeConfigFile() {
         try {
             configFile.createNewFile();
-            FileOutputStream out = new FileOutputStream(configFile);
-            prop.put("db_prefix", "phpbb_table_prefix");
-            prop.put("db_pass", "mysql_password");
-            prop.put("db_user", "mysql_login");
-            prop.put("db_name", "mysql_phpbb_database");
-            prop.put("db_url", "jdbc:mysql://localhost:3306/");
-            prop.put("unread_warning_delay", unread_warning_delay.toString());
-            prop.store(out, "PhpbbPM configuration file");
-            out.flush();
-            out.close();          
+            FileWriter writer = new FileWriter(configFile);
+            prop.store(writer, "PhpbbPM configuration file");
+            writer.write("\n#Phpbb config\n");
+            prop_put(writer, "db_prefix", "phpbb_table_prefix");
+            prop_put(writer, "db_pass", "mysql_password");
+            prop_put(writer, "db_user", "mysql_login");
+            prop_put(writer, "db_name", "mysql_phpbb_database");
+            prop_put(writer, "db_url", "jdbc:mysql://localhost:3306/");
+
+            writer.write("\n#PhpbbPM config\n");
+            prop_put(writer, "unread_warning", unread_warning);
+            prop_put(writer, "unread_warning_delay", unread_warning_delay.toString());
+            prop_put(writer, "sign_update_delay", sign_update_delay.toString());
+            prop_put(writer, "sign_detection_string", sign_detection_string);
+            prop_put(writer, "sign_msg", sign_msg); 
+            writer.flush();
+            writer.close();          
             } catch (IOException ex) {
                 log.info("[phpbbpm] Could not create " + configFile.getPath());
             }
     }
 
+    /**
+     * load config
+     */
     public void load() {
         try {
-            FileInputStream in = new FileInputStream(configFile);
-            prop.load(in);
+            FileReader reader = new FileReader(configFile);
+            prop.load(reader);
             db_url = prop.getProperty("db_url");
             db_name = prop.getProperty("db_name");
             db_user = prop.getProperty("db_user");
             db_pass = prop.getProperty("db_pass");
             db_prefix = prop.getProperty("db_prefix");
-            unread_warning_delay = Integer.parseInt(prop.getProperty("unread_warning_delay"));
-            in.close();
-        } catch (NumberFormatException ex) {
-            log.info(String.format("[phpbbpm] Could not load unread_warning_delay propertie,"
-                    + " set to default (%d min)", unread_warning_delay));
-        } catch (IOException ex) {
+            unread_warning = prop.getProperty("unread_warning");
+            try {
+                unread_warning_delay = Integer.parseInt(prop.getProperty("unread_warning_delay"));
+                sign_update_delay = Integer.parseInt(prop.getProperty("sign_update_delay"));
+                } catch (NumberFormatException ex) {
+                    log.info(String.format("[phpbbpm] Could not load unread_warning_delay"
+                        + " or sign_update_delay propertie,"
+                        + " unread_warning_delay set to %d min, sign_update_delay = %d",
+                        unread_warning_delay, sign_update_delay));
+                }
+            sign_detection_string = prop.getProperty("sign_detection_string");
+            sign_msg = prop.getProperty("sign_msg");
+            reader.close();
+            } catch (IOException ex) {
             log.info("[phpbbpm] Could not load " + configFile.getPath());
         }
     }
     
+    /**
+     * @return cnx string
+     */
     public String getDB_url() {
         return db_url;
     }
     
+    /**
+     * @return database name
+     */
     public String getDB_name() {
         return db_name;
     }
     
+    /**
+     * @return database user
+     */
     public String getDB_user() {
         return db_user;
     }
     
+    /**
+     * @return database password
+     */
     public String getDB_pass() {
         return db_pass;
     }
     
+    /**
+     * @return database table prefix
+     */
     public String getDB_prefix() {
         return db_prefix;
     }
-
-    public int getDelay() {
-        return unread_warning_delay;
+    
+    /**
+     * @return display broadcast msg
+     */
+    public String getWarnMsg() {
+        return sign_msg;
     }
 
+    /**
+     * @return delay to schedule the reminder
+     */
+    public int getWarnDelay() {
+        return unread_warning_delay;
+    }
+    
+    /**
+     * @return delay to schedule the sign updater
+     */
+    public int getSignDelay() {
+        return sign_update_delay;
+    }
+    
+    /**
+     * @return display msg on sign
+     */
+    public String getSignDetectionString() {
+        return sign_detection_string;
+    }
+    
+    /**
+     * @return display msg on sign
+     */
+    public String getSignMsg() {
+        return sign_msg;
+    }
+
+    /**
+     * doesnt want to use store because it doesnt order keys and config file was a mess
+     * @param writer streamwriter
+     * @param key config key
+     * @param val config key value
+     * @throws IOException 
+     */
+    private void prop_put(FileWriter writer, String key, String val) throws IOException {
+        writer.write(String.format("%s=%s\n", key, val));
+    }
 }

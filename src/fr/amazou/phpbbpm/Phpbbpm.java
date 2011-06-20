@@ -1,5 +1,5 @@
 /*
- * phpbbpm main
+ * Phpbbpm plugin
  */
 package fr.amazou.phpbbpm;
 
@@ -19,8 +19,8 @@ import org.bukkit.event.Event.Type;
 import org.bukkit.plugin.PluginManager;
 
 /**
- *
- * @author fredericrousseau
+ * Phpbbpm main class
+ * @author Zougi
  */
 public class Phpbbpm extends JavaPlugin {
     private static Logger log;
@@ -32,24 +32,30 @@ public class Phpbbpm extends JavaPlugin {
         log = Logger.getLogger("Minecraft");
         log.info("[phpbbpm] Enabled");
         
-        //load properties
         config = new Config();
         config.load();
         
         server = this.getServer();
         
+        SqlManager sql = new SqlManager();
+        sql.CreateSignTable();
+        sql.Close();
+        
         PluginManager manager = server.getPluginManager();
-        manager.registerEvent(Event.Type.PLAYER_JOIN, new Listener(this), Priority.Normal, this);
+        manager.registerEvent(Event.Type.PLAYER_JOIN, new PhpbbpmPlayerListener(), Priority.Normal, this);
+        manager.registerEvent(Event.Type.BLOCK_BREAK, new PhpbbpmBlockListener(), Priority.Normal, this);
+        manager.registerEvent(Event.Type.SIGN_CHANGE, new PhpbbpmBlockListener(), Priority.Normal, this);
         
         BroadCastUnread unread_msg = new BroadCastUnread();
-        unread_msg.Start();
+        unread_msg.StartReminder();
+        unread_msg.StartSignUpdater();
     }
     
     @Override
     public void onDisable() { 
+        server.getScheduler().cancelTasks(this);
         log.info("[phpbbpm] Disabled");
     }
-    
     
     @Override
     public boolean onCommand(CommandSender sender, Command cmd, String commandLabel, String[] args){
@@ -77,7 +83,7 @@ public class Phpbbpm extends JavaPlugin {
             }
         } else if (myCmd.equals("pmsend")) {
             if (args.length >= 3) {
-                List msg_text = new ArrayList<String>(Arrays.asList(args));
+                List<String> msg_text = new ArrayList<String>(Arrays.asList(args));
                 ret = c.Send(args[0], args[1], msg_text.subList(2, msg_text.size()));
             }
         } else if (myCmd.equals("pmlist")) {

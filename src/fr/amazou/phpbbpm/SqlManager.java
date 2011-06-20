@@ -3,26 +3,24 @@
  */
 package fr.amazou.phpbbpm;
 
-import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.sql.Timestamp;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.bukkit.Location;
 import org.bukkit.entity.Player;
 
 /**
- *
- * @author fredericrousseau
+ * pbpbbpm sql queries
+ * @author Zougi
  */
 public class SqlManager extends Phpbbpm {
     
@@ -53,10 +51,18 @@ public class SqlManager extends Phpbbpm {
        }
     }
     
+    /**
+     * set the player queries will interact with
+     * @param p 
+     */
     public void setPlayer(Player p) {
        player = p;
     }
     
+    /**
+     * 
+     * @return pseudo and pm count of players who got new pm
+     */
     public Map<String, Integer> getNbUnreadMsg() {
         Map<String, Integer> map = new HashMap<String, Integer>();
         String query = String.format("select username, count(msg_id) as unread_msg"
@@ -69,12 +75,17 @@ public class SqlManager extends Phpbbpm {
             while (result.next()) {
                 map.put(result.getString("username"), result.getInt("unread_msg"));
             }
+            st.close();
         } catch (SQLException ex) {
             //log.log(Level.WARNING, "[phpbbpm] Error getting unreaded messages of players");
         }
         return map;
     }
     
+    /**
+     * 
+     * @return pm count of current player
+     */
     public int getNbUnreadMsg_solo() {
         String query = String.format("select count(msg_id) as unread_msg"
                 + " from %1$sprivmsgs_to msg"
@@ -87,6 +98,7 @@ public class SqlManager extends Phpbbpm {
             if (result.next()) {
                 return result.getInt("unread_msg");
             }
+            ps.close();
         } catch (SQLException ex) {
             //log.log(Level.WARNING, "[phpbbpm] Error getting unreaded message of " + player.getName());
         }
@@ -115,6 +127,7 @@ public class SqlManager extends Phpbbpm {
                 }
                 list.add(map);
             }
+            ps.close();
             return list;
         } catch (SQLException ex) {
             //log.log(Level.WARNING, "[phpbbpm] Error getting unreaded messages of " + player.getName());
@@ -123,6 +136,11 @@ public class SqlManager extends Phpbbpm {
         return null;
     }
     
+    /**
+     * 
+     * @param msg_id the pm id, 0 == last message
+     * @return username,  message_subject, message_text
+     */
     public Map<String, String> ReadMsg(int msg_id) {
         Map<String, String> map = null;
         String query = String.format(
@@ -150,11 +168,13 @@ public class SqlManager extends Phpbbpm {
                 for (String key : keys) {
                     map.put(key, result.getString(key));
                 }
+                int user_id = result.getInt("user_id");
+                ps.close();
                 if (map != null && map.size() > 0) {
                     conn.setAutoCommit(false);
                     
                     query = String.format("update %sprivmsgs_to set pm_unread = 0 where msg_id = %d",
-                            db_prefix, result.getInt("msg_id"));
+                            db_prefix, user_id);
                     Statement st = conn.createStatement();
                     st.executeUpdate(query);
                     
@@ -163,11 +183,12 @@ public class SqlManager extends Phpbbpm {
                         + " user_new_privmsg - 1 else 0 end,"
                         + " user_unread_privmsg = case when user_unread_privmsg > 0 then"
                         + " user_unread_privmsg - 1 else 0 end where user_id = "
-                        + result.getInt("user_id");
+                        + user_id;
                     st = conn.createStatement();
                     st.executeUpdate(query);
                     
                     conn.commit();
+                    st.close();
                     conn.setAutoCommit(true);
                 }
             }
@@ -176,15 +197,22 @@ public class SqlManager extends Phpbbpm {
             try {
                 conn.rollback();
                 conn.setAutoCommit(true);
-                //this.log.info("[phpbbpm] Error updating new pm number");
+                this.log.info("[phpbbpm] Error updating new pm number" + ex.getMessage());
             } catch (SQLException ex1) {
-                //this.log.info("[phpbbpm] rollback error. ex: " + ex.getMessage());
+                this.log.info("[phpbbpm] rollback error. ex: " + ex.getMessage());
             }
-            //log.log(Level.WARNING, "[phpbbpm] Error getting unreaded message of " + player.getName());
+            log.log(Level.WARNING, "[phpbbpm] Error getting unreaded message of " + player.getName());
         }
         return null;
     }
     
+    /**
+     * send a new pm to someone
+     * @param to recipient
+     * @param msg_subject pm subject
+     * @param msg_text pm text
+     * @return true if ok
+     */
     public boolean SendMsg(String to, String msg_subject, List<String> msg_text) {
         String query_get_ids = String.format("select user_id from %susers", db_prefix)
                 + " where lower(username) like lower(?)";
@@ -220,6 +248,7 @@ public class SqlManager extends Phpbbpm {
                 author_id = result.getInt("user_id");
                 result.next();
                 to_id = result.getInt("user_id");
+                ps_get_ids.close();
                 conn.setAutoCommit(false);
                 
                 PreparedStatement ps_insert_pm = conn.prepareStatement(query_insert_pm);
@@ -255,6 +284,10 @@ public class SqlManager extends Phpbbpm {
                 ps_refresh_new_pm.executeUpdate();
                 
                 conn.commit();
+                ps_insert_pm.close();
+                st_get_msg_id.close();
+                ps_pm_to_me.close();
+                ps_refresh_new_pm.close();
                 conn.setAutoCommit(true);
                 return true;
         } catch (SQLException ex) {
@@ -268,7 +301,101 @@ public class SqlManager extends Phpbbpm {
         }
         return false;
     }
-       
+
+    /**
+     * if the sign table does not exists, create it
+     */
+    public void CreateSignTable() {
+        String query = "create table if not exists phpbbpm_signs"
+                    + " (user_id int, world varchar(40), x double, y double, z double)";
+        try {
+            Statement st = conn.createStatement();
+            st.executeUpdate(query);
+            st.close();
+        } catch (Exception e) {
+            //log.log(Level.WARNING, "[phpbbpm] Can't create phpbbpm_signs table");
+        }
+    }
+    
+    /**
+     * put sign position into the db
+     * @param location the sign location
+     */
+    public Boolean StoreSign(Location location) {
+        try {
+            String query = String.format("insert into phpbbpm_signs (user_id, world, x, y, z)"
+                    + " values ((select user_id from %susers where lower(username) like lower(?)),"
+                    + " ?, ?, ?, ?)", db_prefix);
+            PreparedStatement ps = conn.prepareStatement(query);
+            ps.setString(1, "%" + player.getName() + "%");
+            ps.setString(2, location.getWorld().getName());
+            ps.setDouble(3, location.getX());
+            ps.setDouble(4, location.getY());
+            ps.setDouble(5, location.getZ());
+            ps.executeUpdate();
+            ps.close();
+            return true;
+        } catch (SQLException ex) {
+            //log.log(Level.WARNING, "[phpbbpm] Can't store sign");
+        }
+        return false;
+    }
+    
+    /**
+     * 
+     * @return list of signs location
+     */
+    public List<Map<String, Object>> getSigns() {
+        String query = String.format("select world, x, y, z, count(msg_id) as unread_msg"
+                + " from phpbbpm_signs s"
+                + " left join %sprivmsgs_to msg on s.user_id = msg.user_id"
+                + " where pm_unread = 1 group by msg.user_id", db_prefix);
+        List<Map<String, Object>> signs_list = new ArrayList<Map<String, Object>>();
+        String worldName;
+        int x, y, z;
+        Map<String, Object> tmp;
+        try {
+            Statement st = conn.createStatement();
+            ResultSet result = st.executeQuery(query);
+            while (result.next()) {
+                worldName = result.getString("world");
+                x = result.getInt("x");
+                y = result.getInt("y");
+                z = result.getInt("z");
+                tmp = new HashMap<String, Object>();
+                tmp.put("location", new Location(Phpbbpm.getBukkitServer().getWorld(worldName), x, y, z));
+                tmp.put("unread_msg", result.getString("unread_msg"));
+                signs_list.add(tmp);
+            }
+            st.close();
+        } catch(Exception ex) {
+            //log.log(Level.WARNING, "[phpbbpm] Can't retrive signs : " + ex.getMessage());
+        }
+        return signs_list;
+    }
+    
+    /**
+     * delete stored sign
+     * @param location the sign location
+     */
+    public void DeleteSign(Location location) {
+        try {
+            String query = "delete from phpbbpm_signs where world = ? and x = ? and y = ? and z = ?";
+            PreparedStatement ps = conn.prepareStatement(query);
+            ps.setString(1, location.getWorld().getName());
+            ps.setDouble(2, location.getX());
+            ps.setDouble(3, location.getY());
+            ps.setDouble(4, location.getZ());
+            ps.executeUpdate();
+            ps.close();
+        } catch (SQLException ex) {
+            //log.log(Level.WARNING, "[phpbbpm] Can't store sign");
+        }
+    }
+    
+    /**
+     * close connection
+     */
     public void Close() {
         try {
             conn.close();

@@ -6,6 +6,10 @@ How it works:
 On player game join, if the player got a new pm, a reminder is displayed.
 Every X minutes (7 by default), if the player got a new pm, a reminder is displayed either.
 
+You can send/read/list your pm (see the Usage section)
+
+You can add a sign displaying the amount of unread messages you have. (Default: Just write on the first line of the sign: PhpbbPM)
+
 Usage:
 
 /pmhelp
@@ -30,7 +34,7 @@ Make sure your players have a similar name on your forum and on Minecraft.
 Put phpbbpm.jar and the phpbbpm folder into your bukkit plugins folder.
 edit config.properties and specify the database properties of your phpbb forum.
 
-The 'unread_warning_delay' property correspond to the schedule new pm reminder.
+There are also some options you can configure like the message the reminder/sign will display and its frequency.
 
 Note: if the phpbbpm folder or the config file does not exists, a default one will be generate.
 

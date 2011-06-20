@@ -3,21 +3,32 @@
  */
 package fr.amazou.phpbbpm;
 
+import java.util.List;
 import java.util.Map;
 import org.bukkit.entity.Player;
 import org.bukkit.ChatColor;
+import org.bukkit.Location;
+import org.bukkit.block.Sign;
 
 /**
- *
- * @author fredericrousseau
+ * message broadcaster
+ * @author Zougi
  */
 class BroadCastUnread extends Phpbbpm {
 
+    private String sign_msg;
+    private String warn_msg;
+    
     public BroadCastUnread() {
-        
+        Config config = Phpbbpm.getPluginConfig();
+        sign_msg = config.getSignMsg();
+        warn_msg = config.getWarnMsg();
     }
     
-    public void Start() {
+    /**
+     * start the reminder scheduler
+     */
+    public void StartReminder() {
        
         Phpbbpm.getBukkitServer().getScheduler().scheduleAsyncRepeatingTask(this, new Runnable() {
 
@@ -29,33 +40,62 @@ class BroadCastUnread extends Phpbbpm {
                     int pmNb = 0;
                     if (unread_msgs != null && unread_msgs.size() > 0)
                     for (Map.Entry<String, Integer> e : unread_msgs.entrySet()){
-                        Player p = findPlayer(e.getKey().toLowerCase(), players);
+                        Player p = findPlayer(e.getKey(), players);
                         pmNb = e.getValue();
                         if (p != null && pmNb != 0) {
-                            p.sendMessage(String.format("%s%s %spm unread.", ChatColor.RED, pmNb, ChatColor.WHITE));
+                            p.sendMessage(String.format(warn_msg, ChatColor.RED, pmNb, ChatColor.WHITE));
                         }
                     }
                     sql.Close();
                 }
             }
 
+            /**
+             * @return player if key is contained in players tab
+             */
             private Player findPlayer(String key, Player[] players) {
                 for (Player p : players) {
-                    if (p.getName().toLowerCase().contains(key)) {
+                    if (p.getName().toLowerCase().contains(key.toLowerCase())) {
                         return p;
                     }
                 }
                 return null;
             }
-        }, 60L, 1200 * Phpbbpm.getPluginConfig().getDelay());
+        }, 60L, 1200 * Phpbbpm.getPluginConfig().getWarnDelay());
     }
     
+    /**
+     * start the sign updater
+     */
+    public void StartSignUpdater() {
+       
+        Phpbbpm.getBukkitServer().getScheduler().scheduleAsyncRepeatingTask(this, new Runnable() {
+            public void run() {
+                SqlManager sql = new SqlManager();
+                 List<Map<String, Object>> signs_list = sql.getSigns();
+                 Location sign_location;
+                 Sign sign;
+                 for (Map map : signs_list) {
+                    sign_location = (Location)map.get("location");
+                    sign = (Sign)sign_location.getBlock().getState();
+                    sign.setLine(2, String.format(sign_msg,
+                            ChatColor.RED, map.get("unread_msg").toString()));
+                }
+                sql.Close();
+            }
+        }, 60L, 1200 * Phpbbpm.getPluginConfig().getSignDelay());
+    }
+    
+    /**
+     * display a reminder on player join
+     * @param p  
+     */
     public void JoinMessage(Player p) {
         SqlManager sql = new SqlManager();
         sql.setPlayer(p);
         int pmNb = sql.getNbUnreadMsg_solo();
         if (pmNb > 0) {
-            p.sendMessage(String.format("%s%s %spm unread.", ChatColor.RED, pmNb, ChatColor.WHITE));
+            p.sendMessage(String.format(warn_msg, ChatColor.RED, pmNb, ChatColor.WHITE));
         }
         sql.Close();
     }
