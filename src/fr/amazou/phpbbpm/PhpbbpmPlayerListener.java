@@ -23,6 +23,5 @@ public class PhpbbpmPlayerListener extends PlayerListener {
     public void onPlayerJoin(PlayerJoinEvent event) {
         BroadCastUnread unread_msg = new BroadCastUnread();
         unread_msg.JoinMessage(event.getPlayer());
-        //unread_msg.UpdateSign(event.getPlayer());
     }
 }
