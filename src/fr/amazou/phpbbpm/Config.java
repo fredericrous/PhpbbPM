@@ -3,14 +3,22 @@
  */
 package fr.amazou.phpbbpm;
 
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.nio.CharBuffer;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Properties;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -19,8 +27,9 @@ import java.util.logging.Logger;
  */
 public class Config {
    
-    private static String pluginDirPath = "plugins/phpbbpm";
-    private static File configFile = new File(pluginDirPath +"/config.properties");
+    private final static String pluginDirPath = "plugins/phpbbpm";
+    private final static File pseudoFile = new File(pluginDirPath +"/pseudo.fix");
+    private final static File configFile = new File(pluginDirPath +"/config.properties");
     private Logger log;
     private Properties prop;
 
@@ -37,10 +46,12 @@ public class Config {
     private String sign_detection_string;
     private String sign_msg;
     
+    private List<Map<String, String>> pseudoList;
+    
     public Config() {
         log = Logger.getLogger("Minecraft");
         
-        unread_warning = "%s%s %spm unread.";
+        unread_warning = "%s%d %spm unread.";
         unread_warning_delay = 7;
         
         sign_update_delay = 5;
@@ -52,6 +63,9 @@ public class Config {
         prop = new Properties();       
         if (!configFile.exists()) {
             makeConfigFile();
+        }
+        if (!pseudoFile.exists()) {
+            makePseudoFile();
         }
     }
 
@@ -119,7 +133,63 @@ public class Config {
             sign_msg = prop.getProperty("sign_msg");
             reader.close();
             } catch (IOException ex) {
-            log.info("[phpbbpm] Could not load " + configFile.getPath());
+                log.info("[phpbbpm] Could not load " + configFile.getPath());
+            }
+    }
+    
+    /**
+     * doesnt want to use store because it doesnt order keys and config file was a mess
+     * @param writer streamwriter
+     * @param key config key
+     * @param val config key value
+     * @throws IOException 
+     */
+    private void prop_put(FileWriter writer, String key, String val) throws IOException {
+        writer.write(String.format("%s=%s\n", key, val));
+    }
+    
+    /**
+     * create the pseudo.fix file
+     */
+    private void makePseudoFile() {
+        try {
+            pseudoFile.createNewFile();
+            FileWriter writer = new FileWriter(pseudoFile);
+            writer.write("# ingame_pseudo=forum_pseudo");
+            writer.close();
+        } catch (IOException ex) {
+            log.log(Level.WARNING, "[PhpbbPM] Can't create " + pseudoFile);
+        }
+    }
+
+    /**
+     * load pseudo.fix file 
+     */
+    public void loadPseudoList() {
+        pseudoList = new ArrayList<Map<String, String>>();
+        try {
+            FileReader fileStream = new FileReader(pseudoFile);
+            BufferedReader reader = new BufferedReader(fileStream);
+            String str;
+            int separator_pos;
+            Map<String, String> map;
+            while ((str = reader.readLine()) != null) {
+                if (!str.startsWith("#")) {
+                    separator_pos = str.lastIndexOf('=');
+                    map = new HashMap<String, String>();
+                    map.put("ingame", str.substring(0, separator_pos));
+                    map.put("forum", str.substring(separator_pos + 1, str.length()));
+                    pseudoList.add(map);
+                }
+            }
+            reader.close();
+            fileStream.close();
+        } catch (FileNotFoundException ex) {
+            log.log(Level.INFO, "[PhpbbPM] Can't find " + pseudoFile);
+        } catch (IOException e) {
+            log.log(Level.WARNING, "[PhpbbPM] Can't read " + pseudoFile);
+        } catch (Exception ef) {
+            log.info(ef.getMessage());
         }
     }
     
@@ -162,7 +232,7 @@ public class Config {
      * @return display broadcast msg
      */
     public String getWarnMsg() {
-        return sign_msg;
+        return unread_warning;
     }
 
     /**
@@ -192,15 +262,8 @@ public class Config {
     public String getSignMsg() {
         return sign_msg;
     }
-
-    /**
-     * doesnt want to use store because it doesnt order keys and config file was a mess
-     * @param writer streamwriter
-     * @param key config key
-     * @param val config key value
-     * @throws IOException 
-     */
-    private void prop_put(FileWriter writer, String key, String val) throws IOException {
-        writer.write(String.format("%s=%s\n", key, val));
+    
+    public List<Map<String, String>> getPseudoList() {
+        return pseudoList;
     }
 }

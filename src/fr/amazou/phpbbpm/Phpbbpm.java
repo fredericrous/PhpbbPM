@@ -33,7 +33,9 @@ public class Phpbbpm extends JavaPlugin {
         log.info("[phpbbpm] Enabled");
         
         config = new Config();
-        config.load();
+         config.loadPseudoList(); //load pseudo.fix
+        config.load(); //load config.properties
+       
         
         server = this.getServer();
         

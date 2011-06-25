@@ -72,16 +72,16 @@ class BroadCastUnread extends Phpbbpm {
         Phpbbpm.getBukkitServer().getScheduler().scheduleAsyncRepeatingTask(this, new Runnable() {
             public void run() {
                 SqlManager sql = new SqlManager();
-                 List<Map<String, Object>> signs_list = sql.getSigns();
-                 Location sign_location;
-                 Sign sign;
-                 for (Map map : signs_list) {
-                    sign_location = (Location)map.get("location");
-                    sign = (Sign)sign_location.getBlock().getState();
-                    sign.setLine(2, String.format(sign_msg,
-                            ChatColor.RED, map.get("unread_msg").toString()));
-                }
-                sql.Close();
+                List<Map<String, Object>> signs_list = sql.getSigns();
+                Location sign_location;
+                Sign sign;
+                for (Map map : signs_list) {
+                   sign_location = (Location)map.get("location");
+                   sign = (Sign)sign_location.getBlock().getState();
+                   sign.setLine(2, String.format(sign_msg,
+                           ChatColor.RED, Integer.parseInt(map.get("unread_msg").toString())));
+               }
+               sql.Close();
             }
         }, 60L, 1200 * Phpbbpm.getPluginConfig().getSignDelay());
     }

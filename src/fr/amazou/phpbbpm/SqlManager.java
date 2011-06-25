@@ -3,6 +3,7 @@
  */
 package fr.amazou.phpbbpm;
 
+import com.mysql.jdbc.CallableStatement;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -25,12 +26,14 @@ import org.bukkit.entity.Player;
 public class SqlManager extends Phpbbpm {
     
     private Connection conn = null;
-    private Player player;
+    private String player;
     private Logger log;
     private String db_prefix;
+    private List<Map<String, String>> pseudoList;
     
     public SqlManager() {
        Config config = Phpbbpm.getPluginConfig();
+       pseudoList = config.getPseudoList();
        log = Phpbbpm.getLog();
        
        String url = config.getDB_url();
@@ -56,7 +59,21 @@ public class SqlManager extends Phpbbpm {
      * @param p 
      */
     public void setPlayer(Player p) {
-       player = p;
+        player = p.getName();
+        String player_tmp = isPseudoInList(player);
+        player = (player_tmp != null) ? player_tmp : "%" + player + "%";
+    }
+    
+    /**
+     * @return forum pseudo if is in list
+     */
+    private String isPseudoInList(String p) {
+        for (Map<String, String> pseudo : pseudoList) {
+            if (pseudo.get("ingame").equalsIgnoreCase(p)) {
+                return pseudo.get("forum");
+            }
+        }
+        return null;
     }
     
     /**
@@ -93,7 +110,7 @@ public class SqlManager extends Phpbbpm {
                 + " where pm_unread = 1 and lower(username) like lower(?)", db_prefix);
         try {
             PreparedStatement ps = conn.prepareStatement(query);
-            ps.setString(1, "%" + player.getName() + "%");
+            ps.setString(1, player);
             ResultSet result = ps.executeQuery();
             if (result.next()) {
                 return result.getInt("unread_msg");
@@ -116,7 +133,7 @@ public class SqlManager extends Phpbbpm {
                 + " where pm_unread = 1 and lower(u.username) like lower(?) limit 5", db_prefix);
         try {
             PreparedStatement ps = conn.prepareStatement(query);
-            ps.setString(1, "%" + player.getName() + "%");
+            ps.setString(1, player);
             ResultSet result = ps.executeQuery();
             String[] keys = {"msg_id", "username",  "message_subject", "message_text"};
             Map<String, String> map;
@@ -157,7 +174,7 @@ public class SqlManager extends Phpbbpm {
         query += " order by message_time desc limit 1";
         try {
             PreparedStatement ps = conn.prepareStatement(query);
-            ps.setString(1, "%" + player.getName() + "%");
+            ps.setString(1, player);
             if (msg_id != 0) {
                 ps.setInt(2, msg_id);
             }
@@ -201,7 +218,7 @@ public class SqlManager extends Phpbbpm {
             } catch (SQLException ex1) {
                 this.log.info("[phpbbpm] rollback error. ex: " + ex.getMessage());
             }
-            log.log(Level.WARNING, "[phpbbpm] Error getting unreaded message of " + player.getName());
+            log.log(Level.WARNING, "[phpbbpm] Error getting unreaded message of " + player.substring(1, player.length() -1));
         }
         return null;
     }
@@ -238,11 +255,13 @@ public class SqlManager extends Phpbbpm {
         
         int to_id = 0;
         int author_id = 0;
-        
+        String tmp_to = isPseudoInList(to);
+        to = (tmp_to != null) ? tmp_to : "%" + to + "%";
+        log.info("de: " + player + ", to: " + to);
         try {
                 PreparedStatement ps_get_ids = conn.prepareStatement(query_get_ids);
-                ps_get_ids.setString(1, "%" + player.getName() + "%");
-                ps_get_ids.setString(2, "%" + to + "%");
+                ps_get_ids.setString(1, player);
+                ps_get_ids.setString(2, to);
                 ResultSet result = ps_get_ids.executeQuery();
                 result.next();
                 author_id = result.getInt("user_id");
@@ -327,7 +346,7 @@ public class SqlManager extends Phpbbpm {
                     + " values ((select user_id from %susers where lower(username) like lower(?)),"
                     + " ?, ?, ?, ?)", db_prefix);
             PreparedStatement ps = conn.prepareStatement(query);
-            ps.setString(1, "%" + player.getName() + "%");
+            ps.setString(1, player);
             ps.setString(2, location.getWorld().getName());
             ps.setDouble(3, location.getX());
             ps.setDouble(4, location.getY());
@@ -379,8 +398,8 @@ public class SqlManager extends Phpbbpm {
      * @param location the sign location
      */
     public void DeleteSign(Location location) {
+        String query = "delete from phpbbpm_signs where world = ? and x = ? and y = ? and z = ?";
         try {
-            String query = "delete from phpbbpm_signs where world = ? and x = ? and y = ? and z = ?";
             PreparedStatement ps = conn.prepareStatement(query);
             ps.setString(1, location.getWorld().getName());
             ps.setDouble(2, location.getX());
