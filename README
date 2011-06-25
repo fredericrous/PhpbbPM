@@ -10,6 +10,7 @@ You can send/read/list your pm (see the Usage section)
 
 You can add a sign displaying the amount of unread messages you have. (Default: Just write on the first line of the sign: PhpbbPM)
 
+
 Usage:
 
 /pmhelp
@@ -32,16 +33,18 @@ Installation:
 Make sure you have a phpbb 3 forum installed.
 Make sure your players have a similar name on your forum and on Minecraft.
 Put phpbbpm.jar and the phpbbpm folder into your bukkit plugins folder.
-edit config.properties and specify the database properties of your phpbb forum.
 
+Edit config.properties and specify the database properties of your phpbb forum.
 There are also some options you can configure like the message the reminder/sign will display and its frequency.
 
-Note: if the phpbbpm folder or the config file does not exists, a default one will be generate.
+You can edit pseudo.fix to specify the forum's pseudo of an user. Otherwise, PhpbbPM will asume that in-game_pseudo = *forum_pseudo* 
+
+Note: if the phpbbpm folder or a config file does not exists, a default one will be generate.
 
 
 Known bug:
 
-If you have players with similar pseudo, the plugin can match the wrong user because the search is made by a lower(username) = lower('%pseudo%') (where % = all char before/after).
+If you have players with similar pseudo, the plugin can match the wrong user because the search is made by a lower(username) = lower('%pseudo%') (where % = all char before/after). Just edit pseudo.fix to specify the pseudo to use.
 
 
 How to develop on this plugin:
