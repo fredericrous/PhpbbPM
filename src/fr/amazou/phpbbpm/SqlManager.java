@@ -117,7 +117,7 @@ public class SqlManager extends Phpbbpm {
             }
             ps.close();
         } catch (SQLException ex) {
-            //log.log(Level.WARNING, "[phpbbpm] Error getting unreaded message of " + player.getName());
+            //log.log(Level.WARNING, "[phpbbpm] Error getting unreaded message of " + player);
         }
         return 0;
     }
@@ -186,15 +186,16 @@ public class SqlManager extends Phpbbpm {
                     map.put(key, result.getString(key));
                 }
                 int user_id = result.getInt("user_id");
+                msg_id = result.getInt("msg_id");
                 ps.close();
                 if (map != null && map.size() > 0) {
                     conn.setAutoCommit(false);
                     
                     query = String.format("update %sprivmsgs_to set pm_unread = 0 where msg_id = %d",
-                            db_prefix, user_id);
+                            db_prefix, msg_id);
                     Statement st = conn.createStatement();
                     st.executeUpdate(query);
-                    
+
                     query = String.format("update %susers", db_prefix)
                         + " set user_new_privmsg = case when user_new_privmsg > 0 then"
                         + " user_new_privmsg - 1 else 0 end,"
@@ -203,7 +204,7 @@ public class SqlManager extends Phpbbpm {
                         + user_id;
                     st = conn.createStatement();
                     st.executeUpdate(query);
-                    
+
                     conn.commit();
                     st.close();
                     conn.setAutoCommit(true);
@@ -218,7 +219,7 @@ public class SqlManager extends Phpbbpm {
             } catch (SQLException ex1) {
                 this.log.info("[phpbbpm] rollback error. ex: " + ex.getMessage());
             }
-            log.log(Level.WARNING, "[phpbbpm] Error getting unreaded message of " + player.substring(1, player.length() -1));
+            log.log(Level.WARNING, "[phpbbpm] Error getting unreaded message of " + player);
         }
         return null;
     }
@@ -257,7 +258,6 @@ public class SqlManager extends Phpbbpm {
         int author_id = 0;
         String tmp_to = isPseudoInList(to);
         to = (tmp_to != null) ? tmp_to : "%" + to + "%";
-        log.info("de: " + player + ", to: " + to);
         try {
                 PreparedStatement ps_get_ids = conn.prepareStatement(query_get_ids);
                 ps_get_ids.setString(1, player);
