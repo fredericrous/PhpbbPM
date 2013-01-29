@@ -5,33 +5,34 @@ package fr.amazou.phpbbpm;
 
 import java.util.List;
 import java.util.Map;
-import org.bukkit.entity.Player;
+
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.block.Sign;
+import org.bukkit.entity.Player;
 
 /**
  * message broadcaster
+ * 
  * @author Zougi
  */
 class BroadCastUnread extends Phpbbpm {
 
     private String sign_msg;
     private String warn_msg;
-    
+
     public BroadCastUnread() {
         Config config = Phpbbpm.getPluginConfig();
         sign_msg = config.getSignMsg();
         warn_msg = config.getWarnMsg();
     }
-    
+
     /**
      * start the reminder scheduler
      */
     public void StartReminder() {
-       
-        Phpbbpm.getBukkitServer().getScheduler().scheduleAsyncRepeatingTask(this, new Runnable() {
 
+        Phpbbpm.getBukkitServer().getScheduler().runTaskTimerAsynchronously(this, new Runnable() {
             public void run() {
                 Player[] players = Phpbbpm.getBukkitServer().getOnlinePlayers();
                 if (players.length > 0) {
@@ -39,13 +40,13 @@ class BroadCastUnread extends Phpbbpm {
                     Map<String, Integer> unread_msgs = sql.getNbUnreadMsg();
                     int pmNb = 0;
                     if (unread_msgs != null && unread_msgs.size() > 0)
-                    for (Map.Entry<String, Integer> e : unread_msgs.entrySet()){
-                        Player p = findPlayer(e.getKey(), players);
-                        pmNb = e.getValue();
-                        if (p != null && pmNb != 0) {
-                            p.sendMessage(String.format(warn_msg, ChatColor.RED, pmNb, ChatColor.WHITE));
+                        for (Map.Entry<String, Integer> e : unread_msgs.entrySet()) {
+                            Player p = findPlayer(e.getKey(), players);
+                            pmNb = e.getValue();
+                            if (p != null && pmNb != 0) {
+                                p.sendMessage(String.format(warn_msg, ChatColor.RED, pmNb, ChatColor.WHITE));
+                            }
                         }
-                    }
                     sql.Close();
                 }
             }
@@ -63,32 +64,32 @@ class BroadCastUnread extends Phpbbpm {
             }
         }, 60L, 1200 * Phpbbpm.getPluginConfig().getWarnDelay());
     }
-    
+
     /**
      * start the sign updater
      */
     public void StartSignUpdater() {
-       
-        Phpbbpm.getBukkitServer().getScheduler().scheduleAsyncRepeatingTask(this, new Runnable() {
+
+        Phpbbpm.getBukkitServer().getScheduler().runTaskTimerAsynchronously(this, new Runnable() {
             public void run() {
                 SqlManager sql = new SqlManager();
                 List<Map<String, Object>> signs_list = sql.getSigns();
                 Location sign_location;
                 Sign sign;
-                for (Map map : signs_list) {
-                   sign_location = (Location)map.get("location");
-                   sign = (Sign)sign_location.getBlock().getState();
-                   sign.setLine(2, String.format(sign_msg,
-                           ChatColor.RED, Integer.parseInt(map.get("unread_msg").toString())));
-               }
-               sql.Close();
+                for (Map<String, Object> map : signs_list) {
+                    sign_location = (Location) map.get("location");
+                    sign = (Sign) sign_location.getBlock().getState();
+                    sign.setLine(2, String.format(sign_msg, ChatColor.RED, Integer.parseInt(map.get("unread_msg").toString())));
+                }
+                sql.Close();
             }
         }, 60L, 1200 * Phpbbpm.getPluginConfig().getSignDelay());
     }
-    
+
     /**
      * display a reminder on player join
-     * @param p  
+     * 
+     * @param p
      */
     public void JoinMessage(Player p) {
         SqlManager sql = new SqlManager();
