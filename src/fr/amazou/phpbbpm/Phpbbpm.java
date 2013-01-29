@@ -41,9 +41,9 @@ public class Phpbbpm extends JavaPlugin {
         sql.Close();
 
         PluginManager manager = server.getPluginManager();
-        manager.registerEvents(new PhpbbpmListener(), this);
+        manager.registerEvents(new PhpbbpmListener(this), this);
 
-        BroadCastUnread unread_msg = new BroadCastUnread();
+        BroadCastUnread unread_msg = new BroadCastUnread(this);
         unread_msg.StartReminder();
         unread_msg.StartSignUpdater();
     }

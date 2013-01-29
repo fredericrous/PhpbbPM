@@ -52,7 +52,7 @@ public class Config {
         unread_warning_delay = 7;
 
         sign_update_delay = 5;
-        sign_detection_string = "PhpbbPM";
+        sign_detection_string = "Mail";
         sign_msg = "%s%d unread msg";
 
         checkPluginDirExists();

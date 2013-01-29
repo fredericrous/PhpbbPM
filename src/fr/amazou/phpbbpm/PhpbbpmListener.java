@@ -23,8 +23,10 @@ public class PhpbbpmListener implements Listener {
     // private Logger log;
     private String sign_detect;
     private String sign_msg;
+    private Phpbbpm plugin;
 
-    public PhpbbpmListener() {
+    public PhpbbpmListener(Phpbbpm plugin) {
+        this.plugin = plugin;
         // log = Phpbbpm.getLog();
         sign_detect = Phpbbpm.getPluginConfig().getSignDetectionString();
         sign_msg = Phpbbpm.getPluginConfig().getSignMsg();
@@ -37,7 +39,7 @@ public class PhpbbpmListener implements Listener {
      */
     @EventHandler(ignoreCancelled = true, priority = EventPriority.NORMAL)
     public void onPlayerJoin(PlayerJoinEvent event) {
-        BroadCastUnread unread_msg = new BroadCastUnread();
+        BroadCastUnread unread_msg = new BroadCastUnread(plugin);
         unread_msg.JoinMessage(event.getPlayer());
     }
 

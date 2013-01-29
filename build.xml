@@ -1,4 +1,4 @@
-<project default="jar" name="zPhpbbPM">
+<project default="jar" name="Phpbbpm">
 	<property name="base.dir" value="." />
 	<property name="basedir" value="." />
 	<property name="src.dir" value="src" />

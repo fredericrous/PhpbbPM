@@ -16,12 +16,14 @@ import org.bukkit.entity.Player;
  * 
  * @author Zougi
  */
-class BroadCastUnread extends Phpbbpm {
+class BroadCastUnread {
 
-    private String sign_msg;
-    private String warn_msg;
+    private String  sign_msg;
+    private String  warn_msg;
+    private Phpbbpm plugin;
 
-    public BroadCastUnread() {
+    public BroadCastUnread(Phpbbpm plugin) {
+        this.plugin = plugin;
         Config config = Phpbbpm.getPluginConfig();
         sign_msg = config.getSignMsg();
         warn_msg = config.getWarnMsg();
@@ -32,7 +34,7 @@ class BroadCastUnread extends Phpbbpm {
      */
     public void StartReminder() {
 
-        Phpbbpm.getBukkitServer().getScheduler().runTaskTimerAsynchronously(this, new Runnable() {
+        Phpbbpm.getBukkitServer().getScheduler().runTaskTimerAsynchronously(plugin, new Runnable() {
             public void run() {
                 Player[] players = Phpbbpm.getBukkitServer().getOnlinePlayers();
                 if (players.length > 0) {
@@ -62,7 +64,7 @@ class BroadCastUnread extends Phpbbpm {
                 }
                 return null;
             }
-        }, 60L, 1200 * Phpbbpm.getPluginConfig().getWarnDelay());
+        }, 60L, 1200L * 7L);
     }
 
     /**
@@ -70,7 +72,7 @@ class BroadCastUnread extends Phpbbpm {
      */
     public void StartSignUpdater() {
 
-        Phpbbpm.getBukkitServer().getScheduler().runTaskTimerAsynchronously(this, new Runnable() {
+        Phpbbpm.getBukkitServer().getScheduler().runTaskTimerAsynchronously(plugin, new Runnable() {
             public void run() {
                 SqlManager sql = new SqlManager();
                 List<Map<String, Object>> signs_list = sql.getSigns();
@@ -83,7 +85,7 @@ class BroadCastUnread extends Phpbbpm {
                 }
                 sql.Close();
             }
-        }, 60L, 1200 * Phpbbpm.getPluginConfig().getSignDelay());
+        }, 60L, 1200L * 7L);
     }
 
     /**
