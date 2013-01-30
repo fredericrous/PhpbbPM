@@ -6,6 +6,7 @@ package fr.amazou.phpbbpm;
 import java.util.List;
 import java.util.Map;
 
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.block.Sign;
@@ -46,7 +47,7 @@ class BroadCastUnread {
                             Player p = findPlayer(e.getKey(), players);
                             pmNb = e.getValue();
                             if (p != null && pmNb != 0) {
-                                p.sendMessage(String.format(warn_msg, ChatColor.RED, pmNb, ChatColor.WHITE));
+                                p.sendMessage(String.format(ChatColor.translateAlternateColorCodes('&', warn_msg), pmNb));
                             }
                         }
                     sql.Close();
@@ -80,8 +81,12 @@ class BroadCastUnread {
                 Sign sign;
                 for (Map<String, Object> map : signs_list) {
                     sign_location = (Location) map.get("location");
-                    sign = (Sign) sign_location.getBlock().getState();
-                    sign.setLine(2, String.format(sign_msg, ChatColor.RED, Integer.parseInt(map.get("unread_msg").toString())));
+
+                    if (sign_location != null && Bukkit.getWorlds().contains(sign_location.getWorld())) {
+                        sign = (Sign) sign_location.getBlock().getState();
+                        sign.setLine(2, String.format(ChatColor.translateAlternateColorCodes('&', sign_msg), Integer.parseInt(map.get("unread_msg").toString())));
+                    }
+
                 }
                 sql.Close();
             }
@@ -98,7 +103,7 @@ class BroadCastUnread {
         sql.setPlayer(p);
         int pmNb = sql.getNbUnreadMsg_solo();
         if (pmNb > 0) {
-            p.sendMessage(String.format(warn_msg, ChatColor.RED, pmNb, ChatColor.WHITE));
+            p.sendMessage(String.format(ChatColor.translateAlternateColorCodes('&', warn_msg), pmNb));
         }
         sql.Close();
     }

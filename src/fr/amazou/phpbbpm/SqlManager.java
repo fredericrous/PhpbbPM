@@ -91,7 +91,7 @@ public class SqlManager extends Phpbbpm {
             }
             st.close();
         } catch (SQLException ex) {
-            // log.log(Level.WARNING, "[phpbbpm] Error getting unreaded messages of players");
+            log.log(Level.WARNING, "[phpbbpm] Error getting unreaded messages of players");
         }
         return map;
     }
@@ -111,7 +111,7 @@ public class SqlManager extends Phpbbpm {
             }
             ps.close();
         } catch (SQLException ex) {
-            // log.log(Level.WARNING, "[phpbbpm] Error getting unreaded message of " + player);
+            log.log(Level.WARNING, "[phpbbpm] Error getting unreaded message of " + player);
         }
         return 0;
     }
@@ -136,7 +136,7 @@ public class SqlManager extends Phpbbpm {
             ps.close();
             return list;
         } catch (SQLException ex) {
-            // log.log(Level.WARNING, "[phpbbpm] Error getting unreaded messages of " + player.getName());
+            log.log(Level.WARNING, "[phpbbpm] Error getting unreaded messages of " + player);
         }
 
         return null;
@@ -231,10 +231,12 @@ public class SqlManager extends Phpbbpm {
         int author_id = 0;
         String tmp_to = isPseudoInList(to);
         to = (tmp_to != null) ? tmp_to : "%" + to + "%";
+
         try {
             PreparedStatement ps_get_ids = conn.prepareStatement(query_get_ids);
             ps_get_ids.setString(1, player);
             ps_get_ids.setString(2, to);
+
             ResultSet result = ps_get_ids.executeQuery();
             result.next();
             author_id = result.getInt("user_id");
@@ -286,9 +288,9 @@ public class SqlManager extends Phpbbpm {
             try {
                 conn.rollback();
                 conn.setAutoCommit(true);
-                // this.log.info("[phpbbpm] Error sending message to " + to + "ex :" + ex.getMessage());
+                this.log.info("[phpbbpm] Error sending message to " + to + "ex :" + ex.getMessage());
             } catch (SQLException ex1) {
-                // this.log.info("[phpbbpm] rollback error. ex: " + ex.getMessage());
+                this.log.info("[phpbbpm] rollback error. ex: " + ex.getMessage());
             }
         }
         return false;
@@ -304,7 +306,7 @@ public class SqlManager extends Phpbbpm {
             st.executeUpdate(query);
             st.close();
         } catch (Exception e) {
-            // log.log(Level.WARNING, "[phpbbpm] Can't create phpbbpm_signs table");
+            log.log(Level.WARNING, "[phpbbpm] Can't create phpbbpm_signs table");
         }
     }
 
@@ -327,7 +329,7 @@ public class SqlManager extends Phpbbpm {
             ps.close();
             return true;
         } catch (SQLException ex) {
-            // log.log(Level.WARNING, "[phpbbpm] Can't store sign");
+            log.log(Level.WARNING, "[phpbbpm] Can't store sign");
         }
         return false;
     }
@@ -357,7 +359,7 @@ public class SqlManager extends Phpbbpm {
             }
             st.close();
         } catch (Exception ex) {
-            // log.log(Level.WARNING, "[phpbbpm] Can't retrive signs : " + ex.getMessage());
+            log.log(Level.WARNING, "[phpbbpm] Can't retrive signs : " + ex.getMessage());
         }
         return signs_list;
     }
@@ -379,7 +381,7 @@ public class SqlManager extends Phpbbpm {
             ps.executeUpdate();
             ps.close();
         } catch (SQLException ex) {
-            // log.log(Level.WARNING, "[phpbbpm] Can't store sign");
+            log.log(Level.WARNING, "[phpbbpm] Can't store sign");
         }
     }
 
@@ -390,7 +392,7 @@ public class SqlManager extends Phpbbpm {
         try {
             conn.close();
         } catch (Exception e) {
-            // log.log(Level.WARNING, "[phpbbpm] Error closing MySQL connection");
+            log.log(Level.WARNING, "[phpbbpm] Error closing MySQL connection");
         }
     }
 }

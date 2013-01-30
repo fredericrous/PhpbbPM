@@ -13,7 +13,6 @@ tmp
 .project
 .classpath
 eclipse
-dist
 public/avatar
 public/avatars
 public/tabard

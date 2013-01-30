@@ -48,12 +48,12 @@ public class Config {
     public Config() {
         log = Logger.getLogger("Minecraft");
 
-        unread_warning = "%s%d %spm unread.";
+        unread_warning = "%s pm unread.";
         unread_warning_delay = 7;
 
         sign_update_delay = 5;
         sign_detection_string = "Mail";
-        sign_msg = "%s%d unread msg";
+        sign_msg = "%s unread msg";
 
         checkPluginDirExists();
 

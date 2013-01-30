@@ -50,7 +50,7 @@ public class PhpbbpmListener implements Listener {
             sql.setPlayer(event.getPlayer());
             if (sql.StoreSign(event.getBlock().getLocation())) {
                 int pmNb = sql.getNbUnreadMsg_solo();
-                event.setLine(2, String.format(sign_msg, ChatColor.RED, pmNb));
+                event.setLine(2, String.format(ChatColor.translateAlternateColorCodes('&', sign_msg), pmNb));
             } else {
                 event.getPlayer().sendMessage(ChatColor.YELLOW + "Can't store sign");
             }
