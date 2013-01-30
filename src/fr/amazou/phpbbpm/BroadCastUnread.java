@@ -21,6 +21,8 @@ class BroadCastUnread {
 
     private String  sign_msg;
     private String  warn_msg;
+    private int     sign_delay;
+    private int     warn_delay;
     private Phpbbpm plugin;
 
     public BroadCastUnread(Phpbbpm plugin) {
@@ -28,6 +30,8 @@ class BroadCastUnread {
         Config config = Phpbbpm.getPluginConfig();
         sign_msg = config.getSignMsg();
         warn_msg = config.getWarnMsg();
+        sign_delay = config.getSignDelay();
+        warn_delay = config.getWarnDelay();
     }
 
     /**
@@ -65,7 +69,7 @@ class BroadCastUnread {
                 }
                 return null;
             }
-        }, 60L, 1200L * 7L);
+        }, 60L, 1200L * warn_delay);
     }
 
     /**
@@ -90,7 +94,7 @@ class BroadCastUnread {
                 }
                 sql.Close();
             }
-        }, 60L, 1200L * 7L);
+        }, 60L, 1200L * sign_delay);
     }
 
     /**
