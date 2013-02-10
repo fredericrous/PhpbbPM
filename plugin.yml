@@ -1,0 +1,26 @@
+name: Phpbbpm
+main: fr.amazou.phpbbpm.Phpbbpm
+version: 1.2
+author: Calenria
+
+commands:
+   pmhelp:
+      description: affiche l'aide de phpbbpm
+      usage:
+         /pmhelp
+
+   pmread:
+      description: read the last PM. If a player is specified, read the last pm of this one. If an id is specified, read a specific PM.
+      usage:
+         /pmread [id]
+
+   pmsend:
+     description: send a PM to a player
+     usage:
+         /pmsend <player> <subject> <message>
+
+   pmlist:
+     description: list unreaded PM.
+     usage:
+         /pmlist
+     

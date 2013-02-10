@@ -1,7 +1,74 @@
-<?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<project name="Phpbbpm" default="build" basedir=".">
- <property environment="env"/>
-    <property name="debuglevel" value="source,lines,vars"/>
-    <property name="target" value="1.6"/>
-    <property name="source" value="1.6"/> 
+<project default="jar" name="Phpbbpm">
+	<property name="base.dir" value="." />
+	<property name="basedir" value="." />
+	<property name="src.dir" value="src" />
+	<property name="lib.dir" value="lib" />
+	<property name="build.dir" value="build" />
+	<property name="classes.dir" value="${build.dir}/classes" />
+	<property name="jar.dir" value="${base.dir}/dist" />
+	
+	<property name="main-class" value="fr.amazou.phpbbpm.Phpbbpm" />
+
+
+
+	<macrodef name="git-revision">
+		<attribute name="path" />
+		<attribute name="output" />
+		<sequential>
+			<exec executable="git" outputproperty="head" dir="@{path}">
+				<arg value="rev-parse" />
+				<arg value="HEAD" />
+			</exec>
+			<echo file="GIT_REVISION_LOG" message="Found revision: ${head}" />
+			<exec executable="git" outputproperty="dirty">
+				<arg value="diff" />
+				<arg value="--shortstatt" />
+			</exec>
+			<condition property="@{output}" value="${head}" else="${head} (dirty)">
+				<equals arg1="${dirty}" arg2="" />
+			</condition>
+		</sequential>
+	</macrodef>
+
+	<path id="classpath">
+		<fileset dir="${lib.dir}" includes="**/*.jar" />
+	</path>
+
+	<tstamp>
+		<format property="DSTAMP" pattern="dd.MM.yyyy" locale="de,DE" />
+		<format property="TSTAMP" pattern="HH:mm" locale="de,DE" />
+	</tstamp>
+
+	<target name="clean">
+		<delete dir="${build.dir}" />
+	</target>
+
+	<target name="compile">
+		<mkdir dir="${classes.dir}" />
+		<javac encoding="UTF-8" srcdir="${src.dir}" destdir="${classes.dir}" includeantruntime="false" classpathref="classpath" />
+		<copy todir="${classes.dir}">
+			<fileset dir="${base.dir}" includes="*.yml,*.properties" />
+		</copy>
+	</target>
+
+	<target name="jar" depends="compile">
+		<git-revision path="${base.dir}" output="version" />
+		<mkdir dir="${jar.dir}" />
+		<jar destfile="${jar.dir}/${ant.project.name}.jar" basedir="${classes.dir}">
+			<manifest>
+				<attribute name="Built-By" value="Calenria" />
+				<attribute name="Built-Date" value="${DSTAMP} - ${TSTAMP}" />
+				<attribute name="Main-Class" value="${main-class}" />
+				<attribute name="Version" value="${version}" />
+			</manifest>
+		</jar>
+	</target>
+
+	<target name="run" depends="jar">
+		<java jar="${jar.dir}/${ant.project.name}.jar" fork="true" />
+	</target>
+
+	<target name="clean-build" depends="clean,jar" />
+
+	<target name="main" depends="clean,run" />
 </project>
